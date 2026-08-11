@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import StoreFront from '@/components/store/StoreFront';
 import AdminDashboard from '@/components/admin/AdminDashboard';
+import StoreFront from './components/store/StoreFront';
 
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash);
