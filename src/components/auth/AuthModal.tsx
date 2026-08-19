@@ -46,7 +46,9 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
     try {
       const res = await callEdgeFn('send-otp', { phone: phone.trim(), purpose });
       setOtpSent(true);
-      if (res.code) {
+      if (res.channel === 'whatsapp') {
+        setInfo(`تم إرسال كود التحقق عبر واتساب إلى ${phone.trim()}`);
+      } else if (res.code) {
         setInfo(`كود التحقق (وضع تجريبي): ${res.code}`);
       } else {
         setInfo(`تم إرسال كود التحقق إلى ${phone.trim()}`);

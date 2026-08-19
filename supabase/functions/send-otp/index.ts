@@ -83,7 +83,35 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // TODO: Send SMS via provider. For now return the code (demo mode).
+    // Try sending the code over WhatsApp via UltraMsg (unofficial WhatsApp API).
+    // Configure ULTRAMSG_INSTANCE_ID and ULTRAMSG_TOKEN as Supabase project secrets.
+    // If they are not configured, fall back to demo mode (code is returned in the response).
+    const instanceId = Deno.env.get("ULTRAMSG_INSTANCE_ID");
+    const ultraToken = Deno.env.get("ULTRAMSG_TOKEN");
+    const waPhone = toEgyptInternational(phone);
+
+    if (instanceId && ultraToken && waPhone) {
+      try {
+        const message = `كود التحقق الخاص بك في مكتبة المعلمين بالمنيا هو: ${code}\nصالح لمدة 5 دقائق. لا تشاركه مع أحد.`;
+        const waRes = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+          method: "POST",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ token: ultraToken, to: waPhone, body: message }),
+        });
+        const waJson = await waRes.json().catch(() => null);
+        if (waRes.ok && waJson?.sent !== false) {
+          return new Response(JSON.stringify({ success: true, channel: "whatsapp" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        // WhatsApp send failed (e.g. number not on WhatsApp, instance disconnected) — fall back to demo mode below.
+      } catch {
+        // Network/provider error — fall back to demo mode below.
+      }
+    }
+
+    // Demo mode: WhatsApp isn't configured yet or the send failed. Return the code so it
+    // can be shown on screen (development / fallback only — configure UltraMsg for production).
     return new Response(JSON.stringify({ success: true, code }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -94,3 +122,13 @@ Deno.serve(async (req: Request) => {
     });
   }
 });
+
+// Converts a local Egyptian number (01xxxxxxxxx) or an already-international number
+// into the international format UltraMsg expects (e.g. 201014137629), with no leading "+".
+function toEgyptInternational(phone: string): string | null {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("20")) return digits;
+  if (digits.startsWith("0")) return `20${digits.slice(1)}`;
+  return `20${digits}`;
+}
