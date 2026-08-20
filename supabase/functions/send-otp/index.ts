@@ -83,30 +83,34 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Try sending the code over WhatsApp via UltraMsg (unofficial WhatsApp API).
-    // Configure ULTRAMSG_INSTANCE_ID and ULTRAMSG_TOKEN as Supabase project secrets.
-    // If they are not configured, fall back to demo mode (code is returned in the response).
-    const instanceId = Deno.env.get("ULTRAMSG_INSTANCE_ID");
-    const ultraToken = Deno.env.get("ULTRAMSG_TOKEN");
+    // Try sending the code over WhatsApp via your self-hosted bridge server
+    // (free — see /whatsapp-bridge in the project for the server code + setup guide).
+    // Configure WHATSAPP_BRIDGE_URL and WHATSAPP_BRIDGE_SECRET as Supabase project secrets.
+    // If they are not configured, or the send fails, we fall back to demo mode below.
+    const bridgeUrl = Deno.env.get("WHATSAPP_BRIDGE_URL");
+    const bridgeSecret = Deno.env.get("WHATSAPP_BRIDGE_SECRET");
     const waPhone = toEgyptInternational(phone);
 
-    if (instanceId && ultraToken && waPhone) {
+    if (bridgeUrl && bridgeSecret && waPhone) {
       try {
         const message = `كود التحقق الخاص بك في مكتبة المعلمين بالمنيا هو: ${code}\nصالح لمدة 5 دقائق. لا تشاركه مع أحد.`;
-        const waRes = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+        const waRes = await fetch(bridgeUrl, {
           method: "POST",
-          headers: { "content-type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ token: ultraToken, to: waPhone, body: message }),
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${bridgeSecret}`,
+          },
+          body: JSON.stringify({ phone: waPhone, message }),
         });
         const waJson = await waRes.json().catch(() => null);
-        if (waRes.ok && waJson?.sent !== false) {
+        if (waRes.ok && waJson?.success) {
           return new Response(JSON.stringify({ success: true, channel: "whatsapp" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        // WhatsApp send failed (e.g. number not on WhatsApp, instance disconnected) — fall back to demo mode below.
+        // Bridge send failed (server offline, WhatsApp not linked, etc.) — fall back to demo mode below.
       } catch {
-        // Network/provider error — fall back to demo mode below.
+        // Network/bridge error — fall back to demo mode below.
       }
     }
 

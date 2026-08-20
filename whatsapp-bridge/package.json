@@ -1,0 +1,16 @@
+{
+  "name": "store-whatsapp-bridge",
+  "version": "1.0.0",
+  "description": "خادم بسيط ومجاني بالكامل لإرسال أكواد التحقق (OTP) عبر واتساب، عن طريق ربط رقم واتساب حقيقي بالمكتبة مفتوحة المصدر whatsapp-web.js",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "whatsapp-web.js": "^1.26.0",
+    "qrcode-terminal": "^0.12.0",
+    "dotenv": "^16.4.5"
+  }
+}
