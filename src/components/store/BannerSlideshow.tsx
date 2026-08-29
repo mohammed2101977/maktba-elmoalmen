@@ -1,18 +1,46 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BannerSlide } from '@/lib/supabase';
 
+const AUTOPLAY_INTERVAL_MS = 4000;
+// After the customer manually changes the slide, wait this long with no further
+// interaction before the automatic rotation resumes on its own.
+const RESUME_AFTER_MS = 5000;
+
 // A simple image carousel: left/right arrow buttons (desktop) and touch-swipe (mobile).
-// Slides always fit fully (object-contain) inside the given container size.
+// Auto-advances on its own; pauses when the customer manually navigates, then resumes
+// automatically after a short period of inactivity. Slides always fit fully (object-contain).
 export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
   const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function goTo(i: number, manual = false) {
+    setIndex(((i % slides.length) + slides.length) % slides.length);
+    if (manual) {
+      setPaused(true);
+      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+      resumeTimeout.current = setTimeout(() => setPaused(false), RESUME_AFTER_MS);
+    }
+  }
+
+  // Automatic rotation — active whenever the customer hasn't recently intervened.
+  useEffect(() => {
+    if (slides.length <= 1 || paused) return;
+    const interval = setInterval(() => {
+      setIndex((i) => (i + 1) % slides.length);
+    }, AUTOPLAY_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [paused, slides.length]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+    };
+  }, []);
 
   if (slides.length === 0) return null;
-
-  function goTo(i: number) {
-    setIndex(((i % slides.length) + slides.length) % slides.length);
-  }
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
@@ -22,8 +50,8 @@ export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
     if (touchStartX.current == null) return;
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     const SWIPE_THRESHOLD = 40;
-    if (delta > SWIPE_THRESHOLD) goTo(index - 1);
-    else if (delta < -SWIPE_THRESHOLD) goTo(index + 1);
+    if (delta > SWIPE_THRESHOLD) goTo(index - 1, true);
+    else if (delta < -SWIPE_THRESHOLD) goTo(index + 1, true);
     touchStartX.current = null;
   }
 
@@ -47,7 +75,7 @@ export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
         <>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); goTo(index - 1); }}
+            onClick={(e) => { e.preventDefault(); goTo(index - 1, true); }}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition"
             aria-label="السابق"
           >
@@ -55,7 +83,7 @@ export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
           </button>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); goTo(index + 1); }}
+            onClick={(e) => { e.preventDefault(); goTo(index + 1, true); }}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition"
             aria-label="التالي"
           >
@@ -66,7 +94,7 @@ export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
               <button
                 key={s.id}
                 type="button"
-                onClick={(e) => { e.preventDefault(); goTo(i); }}
+                onClick={(e) => { e.preventDefault(); goTo(i, true); }}
                 className={`w-1.5 h-1.5 rounded-full transition ${i === index ? 'bg-white w-4' : 'bg-white/50'}`}
                 aria-label={`الصورة ${i + 1}`}
               />
