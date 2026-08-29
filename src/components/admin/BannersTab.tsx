@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, Plus, Trash2, ExternalLink, Video, MessageSquareText, Images } from 'lucide-react';
+import { Image as ImageIcon, Plus, Trash2, ExternalLink, Video, MessageSquareText, Images, Pencil, X, Save } from 'lucide-react';
 import { supabase, type StoreBanner, type BannerSlide } from '@/lib/supabase';
 
 type ContentType = StoreBanner['content_type'];
@@ -18,6 +18,7 @@ function uid() {
 export default function BannersTab() {
   const [banners, setBanners] = useState<StoreBanner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [contentType, setContentType] = useState<ContentType>('image');
   const [newMediaUrl, setNewMediaUrl] = useState('');
   const [newTextContent, setNewTextContent] = useState('');
@@ -41,6 +42,8 @@ export default function BannersTab() {
   }
 
   function resetForm() {
+    setEditingId(null);
+    setContentType('image');
     setNewMediaUrl('');
     setNewTextContent('');
     setNewLinkUrl('');
@@ -49,6 +52,20 @@ export default function BannersTab() {
     setNewSlides([]);
     setSlideUrl('');
     setSlideLink('');
+  }
+
+  function startEdit(banner: StoreBanner) {
+    setEditingId(banner.id);
+    setContentType(banner.content_type);
+    setNewMediaUrl(banner.content_type === 'image' || banner.content_type === 'video' ? (banner.image_url ?? '') : '');
+    setNewTextContent(banner.text_content ?? '');
+    setNewLinkUrl(banner.link_url ?? '');
+    setNewWidth(banner.width != null ? String(banner.width) : '');
+    setNewHeight(banner.height != null ? String(banner.height) : '');
+    setNewSlides(banner.slides ?? []);
+    setSlideUrl('');
+    setSlideLink('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function addSlide() {
@@ -68,11 +85,10 @@ export default function BannersTab() {
     return !!newMediaUrl.trim();
   }
 
-  async function addBanner() {
+  async function saveBanner() {
     if (!canSave()) return;
     setSaving(true);
-    const maxOrder = banners.reduce((max, b) => Math.max(max, b.sort_order), 0);
-    await supabase.from('store_banners').insert({
+    const payload = {
       content_type: contentType,
       image_url: contentType === 'image' || contentType === 'video' ? newMediaUrl.trim() : null,
       text_content: contentType === 'text_ticker' ? newTextContent.trim() : null,
@@ -80,9 +96,13 @@ export default function BannersTab() {
       link_url: newLinkUrl.trim() || null,
       width: newWidth ? parseInt(newWidth) : null,
       height: newHeight ? parseInt(newHeight) : null,
-      active: true,
-      sort_order: maxOrder + 1,
-    });
+    };
+    if (editingId) {
+      await supabase.from('store_banners').update(payload).eq('id', editingId);
+    } else {
+      const maxOrder = banners.reduce((max, b) => Math.max(max, b.sort_order), 0);
+      await supabase.from('store_banners').insert({ ...payload, active: true, sort_order: maxOrder + 1 });
+    }
     resetForm();
     setSaving(false);
     fetchBanners();
@@ -101,6 +121,7 @@ export default function BannersTab() {
   async function removeBanner(id: string) {
     await supabase.from('store_banners').delete().eq('id', id);
     setBanners((prev) => prev.filter((b) => b.id !== id));
+    if (editingId === id) resetForm();
   }
 
   const typeIcon: Record<ContentType, React.ReactNode> = {
@@ -118,7 +139,14 @@ export default function BannersTab() {
       </p>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 space-y-3">
-        <h2 className="font-bold text-sm text-gray-700">إضافة إعلان جديد</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-sm text-gray-700">{editingId ? 'تعديل الإعلان' : 'إضافة إعلان جديد'}</h2>
+          {editingId && (
+            <button type="button" onClick={resetForm} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-semibold">
+              <X size={14} /> إلغاء التعديل
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {(['image', 'video', 'text_ticker', 'slideshow'] as ContentType[]).map((t) => (
@@ -221,11 +249,11 @@ export default function BannersTab() {
         <p className="text-xs text-gray-400">اترك العرض/الارتفاع فارغين لاستخدام الحجم التلقائي المناسب للشاشة.</p>
 
         <button
-          onClick={addBanner}
+          onClick={saveBanner}
           disabled={!canSave() || saving}
           className="flex items-center gap-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg text-sm transition"
         >
-          <Plus size={16} /> إضافة
+          {editingId ? <><Save size={16} /> حفظ التعديلات</> : <><Plus size={16} /> إضافة</>}
         </button>
       </div>
 
@@ -239,7 +267,7 @@ export default function BannersTab() {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
           {banners.map((banner) => (
-            <div key={banner.id} className="p-4 flex items-center gap-3">
+            <div key={banner.id} className={`p-4 flex items-center gap-3 ${editingId === banner.id ? 'bg-brand-50' : ''}`}>
               <div className="w-24 h-14 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center text-gray-400">
                 {banner.content_type === 'image' && banner.image_url && (
                   <img src={banner.image_url} alt="" className="w-full h-full object-contain" />
@@ -283,6 +311,9 @@ export default function BannersTab() {
                 title={banner.active ? 'مفعّل' : 'معطّل'}
               >
                 <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${banner.active ? 'right-0.5' : 'right-5'}`} />
+              </button>
+              <button onClick={() => startEdit(banner)} className="w-9 h-9 shrink-0 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition">
+                <Pencil size={16} />
               </button>
               <button onClick={() => removeBanner(banner.id)} className="w-9 h-9 shrink-0 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition">
                 <Trash2 size={16} />

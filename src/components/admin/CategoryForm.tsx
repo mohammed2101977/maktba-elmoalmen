@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { supabase, type Category } from '@/lib/supabase';
+import DynamicIcon from '@/components/DynamicIcon';
 
 export default function CategoryForm({
   category,
@@ -87,13 +88,19 @@ export default function CategoryForm({
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1.5">أيقونة (اختياري)</label>
-            <input
-              type="text"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              className="w-full h-11 rounded-xl border-2 border-gray-200 px-4 text-sm focus:outline-none focus:border-brand-500 transition"
-              placeholder="اسم الأيقونة من lucide-react"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={icon}
+                onChange={(e) => setIcon(e.target.value)}
+                className="flex-1 h-11 rounded-xl border-2 border-gray-200 px-4 text-sm focus:outline-none focus:border-brand-500 transition"
+                placeholder="اسم الأيقونة من lucide-react، مثال: BookOpen"
+              />
+              <div className="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                <DynamicIcon name={icon} size={20} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">اكتب اسم أيقونة من مكتبة lucide (مثال: BookOpen، ShoppingBag، Pencil). تقدر تشوف كل الأسماء على lucide.dev/icons.</p>
           </div>
 
           <div>

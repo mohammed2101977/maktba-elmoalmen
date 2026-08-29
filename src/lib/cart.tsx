@@ -46,15 +46,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   }, [cart]);
 
-  function addToCart(product: Product, selected: SelectedOptions = emptySelectedOptions()) {
+  function addToCart(product: Product, selected: SelectedOptions = emptySelectedOptions(), qty: number = 1) {
     const key = `${product.id}__${optionsKey(selected)}`;
     const unitPrice = computeUnitPrice(product, selected);
     setCart((prev) => {
       const existing = prev.find((c) => c.key === key);
       if (existing) {
-        return prev.map((c) => (c.key === key ? { ...c, qty: c.qty + 1 } : c));
+        return prev.map((c) => (c.key === key ? { ...c, qty: c.qty + qty } : c));
       }
-      return [...prev, { key, product, qty: 1, selected, unitPrice }];
+      return [...prev, { key, product, qty, selected, unitPrice }];
     });
   }
 

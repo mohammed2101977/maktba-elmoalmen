@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Gift, Plus, Trash2 } from 'lucide-react';
+import { Gift, Plus, Trash2, Pencil, X, Save } from 'lucide-react';
 import { supabase, type StoreGift } from '@/lib/supabase';
 
 export default function GeneralGiftsTab() {
   const [gifts, setGifts] = useState<StoreGift[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newThresholdType, setNewThresholdType] = useState<'quantity' | 'amount'>('amount');
@@ -22,21 +23,39 @@ export default function GeneralGiftsTab() {
     setLoading(false);
   }
 
-  async function addGift() {
+  function resetForm() {
+    setEditingId(null);
+    setNewName('');
+    setNewImageUrl('');
+    setNewThresholdType('amount');
+    setNewThresholdValue('');
+  }
+
+  function startEdit(gift: StoreGift) {
+    setEditingId(gift.id);
+    setNewName(gift.name);
+    setNewImageUrl(gift.image_url ?? '');
+    setNewThresholdType(gift.threshold_type);
+    setNewThresholdValue(String(gift.threshold_value));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function saveGift() {
     if (!newName.trim() || !newThresholdValue) return;
     setSaving(true);
-    const maxOrder = gifts.reduce((max, g) => Math.max(max, g.sort_order), 0);
-    await supabase.from('store_gifts').insert({
+    const payload = {
       name: newName.trim(),
       image_url: newImageUrl.trim() || null,
       threshold_type: newThresholdType,
       threshold_value: Number(newThresholdValue) || 0,
-      active: true,
-      sort_order: maxOrder + 1,
-    });
-    setNewName('');
-    setNewImageUrl('');
-    setNewThresholdValue('');
+    };
+    if (editingId) {
+      await supabase.from('store_gifts').update(payload).eq('id', editingId);
+    } else {
+      const maxOrder = gifts.reduce((max, g) => Math.max(max, g.sort_order), 0);
+      await supabase.from('store_gifts').insert({ ...payload, active: true, sort_order: maxOrder + 1 });
+    }
+    resetForm();
     setSaving(false);
     fetchGifts();
   }
@@ -49,6 +68,7 @@ export default function GeneralGiftsTab() {
   async function removeGift(id: string) {
     await supabase.from('store_gifts').delete().eq('id', id);
     setGifts((prev) => prev.filter((g) => g.id !== id));
+    if (editingId === id) resetForm();
   }
 
   return (
@@ -59,7 +79,14 @@ export default function GeneralGiftsTab() {
       </p>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 space-y-3">
-        <h2 className="font-bold text-sm text-gray-700">إضافة هدية جديدة</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-sm text-gray-700">{editingId ? 'تعديل الهدية' : 'إضافة هدية جديدة'}</h2>
+          {editingId && (
+            <button type="button" onClick={resetForm} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 font-semibold">
+              <X size={14} /> إلغاء التعديل
+            </button>
+          )}
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <input
             type="text"
@@ -93,11 +120,11 @@ export default function GeneralGiftsTab() {
           />
         </div>
         <button
-          onClick={addGift}
+          onClick={saveGift}
           disabled={!newName.trim() || !newThresholdValue || saving}
           className="flex items-center gap-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg text-sm transition"
         >
-          <Plus size={16} /> إضافة الهدية
+          {editingId ? <><Save size={16} /> حفظ التعديلات</> : <><Plus size={16} /> إضافة الهدية</>}
         </button>
       </div>
 
@@ -111,9 +138,9 @@ export default function GeneralGiftsTab() {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
           {gifts.map((gift) => (
-            <div key={gift.id} className="p-4 flex items-center gap-3">
+            <div key={gift.id} className={`p-4 flex items-center gap-3 ${editingId === gift.id ? 'bg-brand-50' : ''}`}>
               {gift.image_url ? (
-                <img src={gift.image_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0 bg-gray-100" />
+                <img src={gift.image_url} alt="" className="w-14 h-14 rounded-lg object-contain bg-gray-100 shrink-0" />
               ) : (
                 <div className="w-14 h-14 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center shrink-0"><Gift size={22} /></div>
               )}
@@ -129,6 +156,9 @@ export default function GeneralGiftsTab() {
                 title={gift.active ? 'مفعّلة' : 'معطّلة'}
               >
                 <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${gift.active ? 'right-0.5' : 'right-5'}`} />
+              </button>
+              <button onClick={() => startEdit(gift)} className="w-9 h-9 shrink-0 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition">
+                <Pencil size={16} />
               </button>
               <button onClick={() => removeGift(gift.id)} className="w-9 h-9 shrink-0 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition">
                 <Trash2 size={16} />

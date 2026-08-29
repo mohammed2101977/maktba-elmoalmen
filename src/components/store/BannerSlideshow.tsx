@@ -75,17 +75,17 @@ export default function BannerSlideshow({ slides }: { slides: BannerSlide[] }) {
         <>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); goTo(index - 1, true); }}
+            onClick={(e) => { e.preventDefault(); goTo(index + 1, true); }}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition"
-            aria-label="السابق"
+            aria-label="التالي"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); goTo(index + 1, true); }}
+            onClick={(e) => { e.preventDefault(); goTo(index - 1, true); }}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition"
-            aria-label="التالي"
+            aria-label="السابق"
           >
             <ChevronRight size={18} />
           </button>

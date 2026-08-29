@@ -27,6 +27,7 @@ import SettingsTab from './SettingsTab';
 import ActivationRequestsTab from './ActivationRequestsTab';
 import PasswordResetRequestsTab from './PasswordResetRequestsTab';
 import RatingsTab from './RatingsTab';
+import DynamicIcon from '@/components/DynamicIcon';
 import BannersTab from './BannersTab';
 import GeneralGiftsTab from './GeneralGiftsTab';
 import VisitStatsPanel from './VisitStatsPanel';
@@ -409,7 +410,7 @@ export default function AdminDashboard() {
                     return (
                       <div key={cat.id} className="p-4 flex items-center gap-3 hover:bg-gray-50 transition">
                         <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                          <FolderTree size={20} />
+                          {cat.icon ? <DynamicIcon name={cat.icon} size={20} /> : <FolderTree size={20} />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-sm text-gray-800">{cat.name}</h4>

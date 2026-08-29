@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, ShoppingCart, Star, Menu, X, ChevronLeft, Heart, User, Phone, Clock, Gift } from 'lucide-react';
+import { Search, ShoppingCart, Star, Menu, X, ChevronLeft, Heart, User, Phone, Clock, Gift, Facebook } from 'lucide-react';
 import {
   supabase,
   formatPrice,
@@ -27,6 +27,7 @@ import BannerSlideshow from './BannerSlideshow';
 import AuthModal from '@/components/auth/AuthModal';
 import { useStoreVisitTracking } from '@/lib/visitTracking';
 import { getVideoEmbed } from '@/lib/media';
+import DynamicIcon from '@/components/DynamicIcon';
 
 export default function StoreFront() {
   useStoreVisitTracking();
@@ -177,6 +178,17 @@ export default function StoreFront() {
               <Phone size={22} />
             </a>
 
+            {/* Facebook page link */}
+            <a
+              href="https://www.facebook.com/groups/1414903403328150"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 hover:bg-brand-700 rounded-lg transition shrink-0"
+              title="صفحتنا على فيسبوك"
+            >
+              <Facebook size={22} />
+            </a>
+
             {/* Account icon */}
             <a href="#/account" className="relative p-2 hover:bg-brand-700 rounded-lg transition shrink-0" title="حسابي">
               <User size={22} />
@@ -227,10 +239,11 @@ export default function StoreFront() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 text-sm font-semibold rounded-md transition whitespace-nowrap ${
+                className={`px-4 py-2 text-sm font-semibold rounded-md transition whitespace-nowrap flex items-center gap-1.5 ${
                   activeCategory === cat.id ? 'bg-brand-800' : 'hover:bg-brand-600'
                 }`}
               >
+                <DynamicIcon name={cat.icon} size={16} />
                 {cat.name}
               </button>
             ))}
@@ -268,10 +281,11 @@ export default function StoreFront() {
                     setActiveCategory(cat.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full text-right px-4 py-3 rounded-lg font-semibold transition ${
+                  className={`w-full text-right px-4 py-3 rounded-lg font-semibold transition flex items-center gap-2 ${
                     activeCategory === cat.id ? 'bg-brand-50 text-brand-700' : 'hover:bg-gray-100'
                   }`}
                 >
+                  <DynamicIcon name={cat.icon} size={18} />
                   {cat.name}
                 </button>
               ))}
@@ -489,7 +503,7 @@ export default function StoreFront() {
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(selected: SelectedOptions) => addToCart(selectedProduct, selected)}
+          onAddToCart={(selected: SelectedOptions, qty: number) => addToCart(selectedProduct, selected, qty)}
           ratingSummary={ratingSummaries[selectedProduct.id]}
           onRatingSubmitted={handleRatingSubmitted}
         />

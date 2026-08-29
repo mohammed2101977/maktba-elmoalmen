@@ -22,12 +22,13 @@ export default function ProductModal({
 }: {
   product: Product;
   onClose: () => void;
-  onAddToCart: (selected: SelectedOptions) => void;
+  onAddToCart: (selected: SelectedOptions, qty: number) => void;
   ratingSummary?: RatingSummary;
   onRatingSubmitted?: (productId: string, summary: RatingSummary) => void;
 }) {
   const { customer } = useAuth();
   const [activeImage, setActiveImage] = useState(0);
+  const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState<Record<string, string>>({});
   const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
@@ -65,6 +66,7 @@ export default function ProductModal({
     }
     setSelectedCounters(counterDefaults);
     setActiveImage(0);
+    setQty(1);
     setMyRating(0);
     setHoverRating(0);
     setRated(false);
@@ -92,7 +94,7 @@ export default function ProductModal({
       return;
     }
     setOptionsError('');
-    onAddToCart(selected);
+    onAddToCart(selected, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -102,15 +104,20 @@ export default function ProductModal({
   }
 
   function toggleGroupCheckbox(group: Product['checkbox_groups'][number], itemId: string) {
-    setOptionsError('');
     setSelectedCheckboxGroups((prev) => {
       const current = prev[group.id] ?? [];
       if (current.includes(itemId)) {
+        if (group.min_selections > 0 && current.length <= group.min_selections) {
+          setOptionsError(`لا يمكن إلغاء هذا الاختيار — يجب اختيار ${group.min_selections} على الأقل من "${group.name}"`);
+          return prev; // would drop below the minimum, ignore
+        }
+        setOptionsError('');
         return { ...prev, [group.id]: current.filter((id) => id !== itemId) };
       }
       if (group.max_selections > 0 && current.length >= group.max_selections) {
         return prev; // max reached, ignore further selections
       }
+      setOptionsError('');
       return { ...prev, [group.id]: [...current, itemId] };
     });
   }
@@ -489,27 +496,49 @@ export default function ProductModal({
               )}
             </div>
 
-            <button
-              onClick={handleAdd}
-              disabled={product.unavailable || (!product.availability_note && product.stock === 0) || price <= 0}
-              className="w-full bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
-            >
-              {product.unavailable ? (
-                'المنتج غير موجود الآن'
-              ) : price <= 0 ? (
-                'اختر خيارات صحيحة للشراء'
-              ) : added ? (
-                <>
-                  <Check size={20} />
-                  تمت الإضافة
-                </>
-              ) : (
-                <>
-                  <ShoppingCart size={20} />
-                  أضف إلى السلة
-                </>
-              )}
-            </button>
+            <div className="flex gap-2">
+              <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  className="w-9 h-11 flex items-center justify-center text-gray-600 disabled:opacity-40 hover:text-brand-600 transition"
+                  aria-label="إنقاص الكمية"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="w-6 text-center font-bold text-gray-800">{qty}</span>
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => q + 1)}
+                  className="w-9 h-11 flex items-center justify-center text-gray-600 hover:text-brand-600 transition"
+                  aria-label="زيادة الكمية"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+              <button
+                onClick={handleAdd}
+                disabled={product.unavailable || (!product.availability_note && product.stock === 0) || price <= 0}
+                className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+              >
+                {product.unavailable ? (
+                  'المنتج غير موجود الآن'
+                ) : price <= 0 ? (
+                  'اختر خيارات صحيحة للشراء'
+                ) : added ? (
+                  <>
+                    <Check size={20} />
+                    تمت الإضافة
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={20} />
+                    أضف إلى السلة
+                  </>
+                )}
+              </button>
+            </div>
             {!product.unavailable && price <= 0 && (
               <p className="text-xs text-red-500 text-center mt-2">لا يمكن الشراء بسعر 0 — راجع الخيارات المختارة</p>
             )}
