@@ -1,4 +1,6 @@
 import * as LucideIcons from 'lucide-react';
+// ÇÓÊíÑÇÏ ÇáÃíŞæäÉ ÇáÈÏíáÉ ÈÔßá ÕÑíÍ æãÓÊŞá áãäÚ ÇäåíÇÑ ÇáãæŞÚ
+import { HelpCircle } from 'lucide-react'; 
 
 function normalizeIconName(name: string): string {
   return name
@@ -18,24 +20,24 @@ export default function DynamicIcon({
   size?: number | string;
   className?: string;
 }) {
-  // 1. ØÈÇÚÉ ÇáÇÓã ÇáãÓÊáã İí ÇáßæäÓæá ááÊÃßÏ ãä æÕæáå
-  console.log("Received Icon Name:", name);
-
   if (!name || !name.trim()) return null;
 
   const candidates = [name.trim(), normalizeIconName(name)];
-  console.log("Checking Candidates:", candidates);
 
   for (const candidate of candidates) {
     const Icon = (LucideIcons as any)[candidate];
     
-    if (Icon && typeof Icon === 'function') {
+    // ÇáÊÚÏíá ÇáÓÍÑí åäÇ: ŞãäÇ ÈÅÒÇáÉ ÔÑØ 'function' 
+    // áÃä ÇáÃíŞæäÇÊ ÇáÍÏíËÉ Êßæä ãä äæÚ 'object'
+    if (Icon) {
       return <Icon size={size} className={className} />;
     }
   }
 
-  // 2. ÅĞÇ áã íÊã ÇáÚËæÑ Úáì ÇáÃíŞæäÉ¡ ÇÚÑÖ ÚáÇãÉ ÇÓÊİåÇã ÍãÑÇÁ
-  const FallbackIcon = LucideIcons.HelpCircle;
-  console.error(`Icon "${name}" not found in lucide-react!`);
-  return <FallbackIcon size={size} className={className} color="red" />;
+  // ßæÏ Âãä ÌÏÇğ: ÅĞÇ ÃÎØÃ ÇáÅÏãä İí ÇÓã ÇáÃíŞæäÉ ÓÊÙåÑ åĞå ÇáÏÇÆÑÉ ÇáÑãÇÏíÉ ÈÏáÇğ ãä ÇäåíÇÑ ÇáãæŞÚ
+  if (HelpCircle) {
+     return <HelpCircle size={size} className={className} color="gray" />;
+  }
+  
+  return null;
 }
