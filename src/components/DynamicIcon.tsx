@@ -1,6 +1,5 @@
-import { icons } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
-// œ«·…  ÊÕÌœ ’Ì€… «·«”„
 function normalizeIconName(name: string): string {
   return name
     .trim()
@@ -19,17 +18,24 @@ export default function DynamicIcon({
   size?: number | string;
   className?: string;
 }) {
+  // 1. ÿ»«⁄… «·«”„ «·„” ·„ ›Ì «·ﬂÊ‰”Ê· ·· √ﬂœ „‰ Ê’Ê·Â
+  console.log("Received Icon Name:", name);
+
   if (!name || !name.trim()) return null;
 
   const candidates = [name.trim(), normalizeIconName(name)];
+  console.log("Checking Candidates:", candidates);
 
   for (const candidate of candidates) {
-    // «” œ⁄«¡ «·√ÌﬁÊ‰… „‰ ﬂ«∆‰ icons «·—”„Ì
-    const Icon = (icons as any)[candidate];
+    const Icon = (LucideIcons as any)[candidate];
+    
     if (Icon && typeof Icon === 'function') {
       return <Icon size={size} className={className} />;
     }
   }
 
-  return null;
+  // 2. ≈–« ·„ Ì „ «·⁄ÀÊ— ⁄·Ï «·√ÌﬁÊ‰…° «⁄—÷ ⁄·«„… «” ›Â«„ Õ„—«¡
+  const FallbackIcon = LucideIcons.HelpCircle;
+  console.error(`Icon "${name}" not found in lucide-react!`);
+  return <FallbackIcon size={size} className={className} color="red" />;
 }
