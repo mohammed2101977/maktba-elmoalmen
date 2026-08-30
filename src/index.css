@@ -32,5 +32,5 @@ body {
   to { transform: translateX(100%); }
 }
 .animate-marquee {
-  animation: marquee-ltr 1s linear infinite;
+  animation: marquee-ltr 20s linear infinite;
 }
