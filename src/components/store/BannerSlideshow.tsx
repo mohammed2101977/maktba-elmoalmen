@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BannerSlide } from '@/lib/supabase';
 
-const AUTOPLAY_INTERVAL_MS = 4000;
+const AUTOPLAY_INTERVAL_MS = 3000;
 // After the customer manually changes the slide, wait this long with no further
 // interaction before the automatic rotation resumes on its own.
 const RESUME_AFTER_MS = 5000;
