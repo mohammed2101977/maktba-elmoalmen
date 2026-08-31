@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Cairo', sans-serif;
+}
+
+body {
+  background-color: #f3f4f6;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrolling text ticker banner: text travels from off-screen left to off-screen right. */
+@keyframes marquee-ltr {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.animate-marquee {
+  animation: marquee-ltr 20s linear infinite;
+}
